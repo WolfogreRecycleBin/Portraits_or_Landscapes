@@ -7,37 +7,37 @@ using namespace std;
 using namespace cv;
 
 //函数声明
-void getFiles(string &path, vector<string> & files);
+void GetFiles(string &path, vector<string> & files);
 bool IsImage(string name);
 bool Detect(CascadeClassifier &cascade, string file_path_name);
-bool LoadCascadeFile(CascadeClassifier &cascade, string &cascade_name);
-void CopyFile(string path, string name, bool if_face);
+bool LoadCascadeFile(CascadeClassifier &cascade, string &cascade_file_name);
+void CopyFile(string path, string name, bool is_face);
 
 //主函数
 int main(void)
 {
-	CascadeClassifier face_cascade;
-	string cascade_name = "haarcascade_frontalface_alt.xml";
-	LoadCascadeFile(face_cascade, cascade_name);
+	CascadeClassifier face_cascade;									//定义级联检测器
+	string cascade_file_name = "haarcascade_frontalface_alt.xml";	//定义级联文件名
+	LoadCascadeFile(face_cascade, cascade_file_name);				//自定义函数加载级联文件
 	string filePath;												//定义路径
 	vector<string> files;											//定义文件名容器
-	getFiles(filePath, files);										//调用函数，询问路径，搜索图片文件
-	string command = "md " + filePath + "人物照\\";
-	system(command.c_str());
-	command = "md " + filePath + "风景照\\";
-	system(command.c_str());
-	for (int i = 0; i < files.size(); i++)
+	GetFiles(filePath, files);										//调用函数，询问路径，搜索图片文件
+	string command = "md " + filePath + "人物照\\";					//生成新建文件夹命令
+	system(command.c_str());										//执行
+	command = "md " + filePath + "风景照\\";						//生成新建文件夹命令
+	system(command.c_str());										//执行
+	for (int i = 0; i < files.size(); i++)							//逐个处理文件
 	{
-		string file_path_name = filePath + files[i];
-		if (Detect(face_cascade, file_path_name))
-			CopyFile(filePath, files[i], 1);
+		string file_path_name = filePath + files[i];				//完整文件路径+文件名
+		if (Detect(face_cascade, file_path_name))					//自定义函数检测是否有脸
+			CopyFile(filePath, files[i], 1);						//有脸拷入人物照
 		else
-			CopyFile(filePath, files[i], 0);
+			CopyFile(filePath, files[i], 0);						//无脸拷入风景照
 	}
 }
 
-//搜索图片文件函数
-void getFiles(string &path, vector<string>& files)
+//函数：搜索图片文件
+void GetFiles(string &path, vector<string>& files)
 {
 	cout << "请输入文件路径:" << endl;
 	getline(cin, path);												//读入目录
@@ -61,11 +61,11 @@ void getFiles(string &path, vector<string>& files)
 	if (size == 0)													//如果搜索到的文件数0，请求再次输入目录重新搜索
 	{
 		cout << "请检查路径是否正确,并重新输入路径!" << endl << endl;
-		getFiles(path, files);										//递归调用
+		GetFiles(path, files);										//递归调用
 	}
 }
 
-//判断是否为图片文件函数
+//函数：判断是否为图片文件
 bool IsImage(string name)
 {
 	char p[4];														//C字符串临时变量
@@ -75,48 +75,52 @@ bool IsImage(string name)
 	return (ext_name == "jpg" || ext_name == "JPG" || ext_name == "png" || ext_name == "PNG");//与支持的图片文件扩展名比较，返货比较结果;
 }
 
-bool LoadCascadeFile(CascadeClassifier &cascade, string &cascade_name)
+//函数：加载级联文件并返回结果
+bool LoadCascadeFile(CascadeClassifier &cascade, string &cascade_file_name)
 {
-	cascade.load(cascade_name);
-	if (cascade.empty())
+	cascade.load(cascade_file_name);								//加载级联文件
+	if (cascade.empty())											//判断是否成功加载
 	{ 
-		cout << "没有正确加载文件" << cascade_name << endl;
+		cout << "没有正确加载文件" << cascade_file_name << endl;
 		return false;
 	}
-	cout << "已正确加载文件" << cascade_name << endl;
+	cout << "已正确加载文件" << cascade_file_name << endl;
 	return true;
 }
 
+//函数：检测图片并返回结果
 bool Detect(CascadeClassifier &cascade, string file_path_name)
 {
-	Mat image = imread(file_path_name.c_str());
+	Mat image = imread(file_path_name.c_str());						//加载图片文件
+	vector<Rect> faces;												//定义用于存放结果的容器
+	//规整图片大小，便于检测，不影响文件
 	const double new_row = 600;
-	vector<Rect> faces; 
 	double new_col =  new_row / image.rows * image.cols;
 	Size new_size(new_col, new_row);
 	resize(image, image, new_size);
+	//执行检测函数
 	cascade.detectMultiScale(image, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
-	for (int i = 0; i < faces.size(); i++)
+	for (int i = 0; i < faces.size(); i++)							//在图片中检测到目标的地方画圆，不影响文件
 	{
 		Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
 		circle(image, center, (faces[i].width + faces[i].height)*0.25, Scalar(0, 0, 255), 3);
 	}
-	Mat showimage=image.clone();
-	imshow("人脸检测结果", showimage);
+	imshow("人脸检测结果", image);									//显示检测结果
 	waitKey(1);
-	return faces.size() != 0;
+	return faces.size() != 0;										//返回知否检测到
 }
 
-void CopyFile(string path, string name, bool if_face)
+//函数：拷贝文件到相应目录
+void CopyFile(string path, string name, bool is_face)
 {
-	string command;
-	if (if_face)
+	string command;													//定义命令
+	if (is_face)													//如果有脸
 	{
-		command = "copy " + path + name + " " + path + "人物照\\";
-		system(command.c_str());
+		command = "copy " + path + name + " " + path + "人物照\\";	//生成拷贝到人物照的命令
+		system(command.c_str());									//执行
 		return;
 	}
-	command = "copy " + path + name + " " + path + "风景照\\";
-	system(command.c_str());
+	command = "copy " + path + name + " " + path + "风景照\\";		//生成拷贝到风景照的命令
+	system(command.c_str());										//执行
 	return;
 }
