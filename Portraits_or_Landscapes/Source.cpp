@@ -124,7 +124,7 @@ bool Detect(CascadeClassifier &cascade, string file_path_name)
 		circle(image, center, (faces[i].width + faces[i].height)*0.25, Scalar(0, 0, 255), 3);
 	}
 	imshow("人脸检测结果", image);									//显示检测和和画圆结果
-	waitKey(1);
+	waitKey(200);													//Fixed:要给足一定的时间让imshow()输出，否则会出错
 	return faces.size() != 0;										//返回知否检测到
 }
 
