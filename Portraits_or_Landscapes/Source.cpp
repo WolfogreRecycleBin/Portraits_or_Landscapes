@@ -27,24 +27,24 @@ int main(void)
 	}
 
 	/*获得待处理文件*/
-	string filePath;												//定义路径
+	string file_path;												//定义路径
 	vector<string> files;											//定义文件名容器
-	GetFiles(filePath, files);										//调用函数，询问路径，搜索图片文件
+	GetFiles(file_path, files);										//调用函数，询问路径，搜索图片文件
 
 	/*创建用于拷贝的目标文件夹*/
-	string command = "md " + filePath + "人物照\\";					//生成新建文件夹命令
+	string command = "md " + file_path + "人物照\\";				//生成新建文件夹命令
 	system(command.c_str());										//执行
-	command = "md " + filePath + "风景照\\";						//生成新建文件夹命令
+	command = "md " + file_path + "风景照\\";						//生成新建文件夹命令
 	system(command.c_str());										//执行
 
 	/*逐个处理文件*/
-	for (unsigned i = 0; i < files.size(); i++)							//逐个访问
+	for (unsigned i = 0; i < files.size(); i++)						//逐个访问
 	{
-		string file_path_name = filePath + files[i];				//生成完整文件路径+文件名
+		string file_path_name = file_path + files[i];				//生成完整文件路径+文件名
 		if (Detect(face_cascade, file_path_name))					//调用函数检测是否有脸
-			CopyFile(filePath, files[i], 1);						//有脸拷入人物照
+			CopyFile(file_path, files[i], 1);						//有脸拷入人物照
 		else
-			CopyFile(filePath, files[i], 0);						//无脸拷入风景照
+			CopyFile(file_path, files[i], 0);						//无脸拷入风景照
 	}
 	destroyAllWindows();											//关闭所有窗口
 	system("pause");
@@ -118,10 +118,11 @@ bool Detect(CascadeClassifier &cascade, string file_path_name)
 	/*执行检测函数*/
 	cascade.detectMultiScale(image, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
 
-	for (unsigned i = 0; i < faces.size(); i++)							//在图片中检测到目标的地方画圆，不影响文件
+	/*在图片中检测到目标的地方画圆，不影响文件*/
+	for (unsigned i = 0; i < faces.size(); i++)
 	{
-		Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
-		circle(image, center, (faces[i].width + faces[i].height)*0.25, Scalar(0, 0, 255), 3);
+		Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);//计算圆心
+		circle(image, center, (faces[i].width + faces[i].height)*0.25, Scalar(0, 0, 255), 3);//画圆
 	}
 	imshow("人脸检测结果", image);									//显示检测和和画圆结果
 	waitKey(200);													//Fixed:要给足一定的时间让imshow()输出，否则会出错
@@ -134,12 +135,12 @@ void CopyFile(string path, string name, bool is_face)
 	string command;													//定义命令
 	if (is_face)													//如果有脸
 	{
-		cout << setw(30) << name<< " 是人物照;	";								//输出提示
+		cout << setw(36) << name<< " 是人物照;	";					//输出提示
 		command = "copy " + path + name + " " + path + "人物照\\";	//生成拷贝到人物照的命令
 		system(command.c_str());									//执行
 		return;
 	}
-	cout << setw(30) << name << " 是风景照;	";									//输出提示
+	cout << setw(36) << name << " 是风景照;	";						//输出提示
 	command = "copy " + path + name + " " + path + "风景照\\";		//生成拷贝到风景照的命令
 	system(command.c_str());										//执行
 	return;
